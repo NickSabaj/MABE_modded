@@ -20,6 +20,8 @@
 #include <Utilities/Data.h>
 #include <Utilities/Parameters.h>
 
+#include <armadillo>
+
 class Organism {
 private:
   static int organismIDCounter; // used to issue unique ids to Genomes
@@ -59,6 +61,8 @@ public:
   bool alive; // is this organism alive (1) or dead (0)
   bool trackOrganism =
       false; // if false, genome will be deleted when organism dies.
+
+  arma::cube organismLevelConnectomeCube;
 
   void initOrganism(std::shared_ptr<ParametersTable> PT_);
 
