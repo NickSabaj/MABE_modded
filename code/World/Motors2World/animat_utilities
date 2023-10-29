@@ -1,0 +1,94 @@
+
+#pragma once
+
+// to speed up the program (10x-20x!),
+// disable safe bounds checking
+// (that is, reading and writing off the ends of an array)
+// by passing to the compiler
+// "NO_BOUNDS_CHECKING":
+// for example, using clang or gcc add:
+// -DNO_BOUNDS_CHECKING
+// or Visual Studio
+// /DNO_BOUNDS_CHECKING
+#ifdef NO_BOUNDS_CHECKING
+// safety first :)
+#define ARMA_NO_DEBUG 1 // armadillo-specific version (use () indexing in armadillo and then use this to get performance when ready)
+#endif
+
+#include <armadillo> // activate the algebra lib now that we have defied potential debugging compiler defs
+
+using namespace arma;
+
+// armadillo algebra lib namespace
+#include <pprint.hpp>// python-like print() fn (must be included in cpp)
+//  // make the pythonic 'print()' fn work, for sanity.
+static pprint::PrettyPrinter printer;
+#define print printer.print
+
+//// deterministic but fast generator
+//// we replace the typical randf()
+//// with this one because it's faster
+//// than the underyling C rand() by a lot
+//// and C rand() is not x-platform deterministic.
+//// The 'd' in 'drand...' is for 'deterministic'
+//// because utilizing the seed allows to
+//// save and reload.
+//static inline std::mt19937_64 generator = std::mt19937_64(34);
+//static inline std::uniform_real_distribution<float> real_dist = std::uniform_real_distribution<float>(0.0f, 1.0f);
+//static inline std::uniform_int_distribution<int> int_dist = std::uniform_int_distribution<int>(0,INT_MAX);
+//
+////static inline void dsrand(const unsigned int& newseed);
+//static inline float drandf() {
+//  return real_dist(generator);
+//}
+//static inline int drand() {
+//  return int_dist(generator);
+//}
+//static inline void dsrand(const unsigned int& newseed) {
+//  generator.seed(newseed);
+//}
+///* return a seed and also use it as the new seed
+// * so the "current seed" can be inspected and saved */
+//static inline unsigned int drandGetSeed() {
+//  unsigned int seed = generator();
+//  generator.seed(seed);
+//  return seed;
+//}
+
+#include <Utilities/Random.h>
+
+static inline float drandf() {
+  return static_cast<float>(Random::getDouble(1.0));
+}
+
+static inline int drand() {
+  return Random::getInt(1<<16);
+}
+
+static inline void dsrand(const unsigned int& newseed) {
+  Random::getCommonGenerator().seed(newseed);
+}
+
+
+// add our clamp function that works on normal types
+namespace arma {
+  template <typename T>
+  T clamp(T val, T lower, T upper) {
+    return std::min(std::max(val,lower),upper);
+  }
+}
+
+// add our own fill random function
+// that uses our faster random number
+// number generator to do the work.
+namespace arma::fill {
+  // the armadillo version of filling with random numbers is very slow compared to C's rand fn.
+  // here, we make a templated fn invoked similarly to arma's that does things much faster.
+  // we aren't doing statistical physics or cryptography, so we don't care about
+  // the quality of the random distribution, so we can just use our fast rand fn.
+  template <typename C, typename T = typename C::value_type, typename = T>
+  void random(C& vec) {
+    std::generate(std::begin(vec), std::end(vec), [] { return (T)Random::getDouble(1.0); });
+  }
+}
+
