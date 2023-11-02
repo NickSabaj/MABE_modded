@@ -25,10 +25,10 @@ std::shared_ptr<ParameterLink<std::string>>
             "from x to 'updates' on z) e.g. '1-100:10, 200, 300:100'");
 
 std::shared_ptr<ParameterLink<std::string>>
-    LODwAPArchivist::LODwAP_Arch_cubeFieldAndIDMapSequencePL =
+    LODwAPArchivist::LODwAP_Arch_cubeFieldFileAndIDFileSequencePL =
         Parameters::register_parameter(
-            "ARCHIVIST_LODWAP-cubeFieldAndIDMapSequence", std::string(":100"),
-            "How often to write genome file. (format: x = single value, x-y = "
+            "ARCHIVIST_LODWAP-cubeFieldFileAndIDFileSequence", std::string(":100"),
+            "How often to write cube field file and ID file. (format: x = single value, x-y = "
             "x to y, x-y:z = x to y on x, :z = from 0 to updates on z, x:z = "
             "from x to 'updates' on z) e.g. '1-100:10, 200, 300:100'");
 
@@ -50,10 +50,10 @@ std::shared_ptr<ParameterLink<bool>>
             "if true, an organisms file will be written");
 
 std::shared_ptr<ParameterLink<bool>>
-    LODwAPArchivist::LODwAP_Arch_writecubeFieldAndIDMapFilesPL =
+    LODwAPArchivist::LODwAP_Arch_writeCubeFieldFileAndIDFilePL =
         Parameters::register_parameter(
-            "ARCHIVIST_LODWAP-writecubeFieldAndIDMapFiles", true,
-            "if true, a cube field file and an ID map file will be written");
+            "ARCHIVIST_LODWAP-writecubeFieldFileAndIDFile", true,
+            "if true, a cube field file and an ID file will be written");
 
 std::shared_ptr<ParameterLink<std::string>>
     LODwAPArchivist::LODwAP_Arch_FilePrefixPL =
@@ -95,14 +95,14 @@ LODwAPArchivist::LODwAPArchivist(std::vector<std::string> popFileColumns,
                            : group_prefix_.substr(0, group_prefix_.size() - 2) +
                                  "__" + "cubeField.bin");
 
-  idMap_file_name_ =  (LODwAP_Arch_FilePrefixPL->get(PT) == "NONE"
+  idFile_file_name_ =  (LODwAP_Arch_FilePrefixPL->get(PT) == "NONE"
                           ? ""
                           : LODwAP_Arch_FilePrefixPL->get(PT)) +
                      (group_prefix_.empty()
-                           ? "idMap.bin"
+                           ? "idFile.txt"
                            : group_prefix_.substr(0, group_prefix_.size() - 2) +
-                                 "__" + "idMap.bin");
-// The cube field and id map files should have update number prefixed to their file names each time they're first written.
+                                 "__" + "idFile.txt");
+// The cube field files and id files should have update number prefixed to their file names each time they're first written.
 // This structure avoids having to try saving fields of fields, or using HDF5 files. HDF5 requires added preparation to the
 // armadillo environment, and I'm trying to avoid potential failure points requiring additional testing and troubleshooting.
   
@@ -111,22 +111,22 @@ LODwAPArchivist::LODwAPArchivist(std::vector<std::string> popFileColumns,
   writeDataFile = LODwAP_Arch_writeDataFilePL->get(PT);
   writeOrganismFile = LODwAP_Arch_writeOrganismFilePL->get(PT);
 
-  writeCubeFieldAndIDMapFiles = LODwAP_Arch_writecubeFieldAndIDMapFilesPL->get(PT);
+  writeCubeFieldFileAndIDFileBool = LODwAP_Arch_writeCubeFieldFileAndIDFilePL->get(PT);
 
   dataSequence = seq(LODwAP_Arch_dataSequencePL->get(PT), Global::updatesPL->get(), true);
   organismSequence = seq(LODwAP_Arch_organismSequencePL->get(PT), Global::updatesPL->get(), true);
 
-  cubeFieldAndIDMapSequence = seq(LODwAP_Arch_cubeFieldAndIDMapSequencePL->get(PT), Global::updatesPL->get(), true);
+  cubeFieldFileAndIDFileSequence = seq(LODwAP_Arch_cubeFieldFileAndIDFileSequencePL->get(PT), Global::updatesPL->get(), true);
 
   dataSequence.push_back(Global::updatesPL->get() + terminateAfter + 2);
   organismSequence.push_back(Global::updatesPL->get() + terminateAfter + 2);
 
-  cubeFieldAndIDMapSequence.push_back(Global::updatesPL->get() + terminateAfter + 2);
+  cubeFieldFileAndIDFileSequence.push_back(Global::updatesPL->get() + terminateAfter + 2);
 
   next_data_write_ = dataSequence[data_seq_index];
   next_organism_write_ = organismSequence[organism_seq_index];
 
-  next_cubeFieldAndIDMap_write_ = cubeFieldAndIDMapSequence[cubeField_andIDMap_seq_index];
+  next_cubeFieldFileAndIDFile_write_ = cubeFieldFileAndIDFileSequence[cubeFieldFile_andIDFile_seq_index];
 
 }
 
@@ -208,7 +208,6 @@ void LODwAPArchivist::writeLODOrganismFile(
     OrgMap.set("ID", current->ID);
     OrgMap.set("update", next_organism_write_);
     OrgMap.setOutputBehavior("update", DataMap::FIRST);
-    ..........................
 
     for (auto & genome : current->genomes) {
       auto name = "GENOME_" + genome.first;
@@ -225,34 +224,27 @@ void LODwAPArchivist::writeLODOrganismFile(
 }
 
 
-void LODwAPArchivist::writeTheCubeFieldAndIDMapFiles(std::vector<std::shared_ptr<Organism>> &population) {
+void LODwAPArchivist::writeCubeFieldFileAndIDFile(std::vector<std::shared_ptr<Organism>> &population) {
         //Just outlining in pseudocode for now
   int cubeFieldCubeCount = static_cast<int>(population.size());
-  field<cube> cubeField(cubeFieldCubeCount);
+  arma::field<arma::cube> cubeField(cubeFieldCubeCount);
 
-  map<int, int> idMap_idToSlot;
-  map<int, int> idMap_slotToID;
+  std::string updateNumString = std::to_string(Global::update);
+
+  std::string cubeField_fullFileName = "updateNum_"+updateNumString+"_"+cubeField_file_name_;
+  std::string idFile_fullFileName = "updateNum_"+updateNumString+idFile_file_name_;
+  std::ofstream idFStream(idFile_fullFileName);
   int orgID = 0;
   int fieldSlot = 0;
 
   for (auto const &org : population){ //Potential error source; unsure if "&" is appropriate. Testing by running, for the sake of quick development.
     orgID = org->ID;    // Get org ID
     cubeField(fieldSlot) = org->organismLevelConnectomeCube;    // Save org's cube to the cube field
-    idMap_idToSlot[orgID] = fieldSlot;
-    idMap_slotToID[fieldSlot] = orgID; // Save org's ID map placement to the ID map
+    idFStream << orgID << "\n"; // Save org's ID to the ID file, at line corresponding to its spot in the cube field
     fieldSlot++; //iterate fieldSlot value
   }
-  
-  std::string updateNumString = std::to_string(Global::update);
-
-  std::string cubeField_fullFileName = "updateNum_"+updateNumString+"_"+cubeField_file_name_;
+  idFStream.close();
   cubeField.save(cubeField_fullFileName);  //save cubeField
-
-  std::string idMap_idToSlot_fullFileName = "updateNum_"+updateNumString+"_idToSlot_"+idMap_file_name;
-  idMap_idToSlot.save(idMap_idToSlot_fullFileName);  //save idToSlot idMap
-
-  std::string idMap_slotToID_fullFileName = "updateNum_"+updateNumString+"_slotToID_"+idMap_file_name;
-  idMap_slotToID.save(idMap_slotToID_fullFileName);  //save slotToID idmap
 }
 
 bool LODwAPArchivist::archive(std::vector<std::shared_ptr<Organism>> &population,
@@ -339,6 +331,8 @@ bool LODwAPArchivist::archive(std::vector<std::shared_ptr<Organism>> &population
   effective_MRCA->parents.clear();
   last_prune_ = effective_MRCA->timeOfBirth; // this will hold the time of the
                                              // oldest genome in RAM
+  if(writeCubeFieldFileAndIDFileBool)
+    writeCubeFieldFileAndIDFile(population);
 
   return finished_;
 

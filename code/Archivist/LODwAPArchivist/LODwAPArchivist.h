@@ -11,6 +11,7 @@
 #pragma once
 
 #include <Archivist/DefaultArchivist.h>
+#include <fstream>
 
 class LODwAPArchivist
     : public DefaultArchivist { // Line of Decent with Active Pruning
@@ -21,7 +22,7 @@ public:
       LODwAP_Arch_organismSequencePL; // how often to write out genomes
 
   static std::shared_ptr<ParameterLink<std::string>>
-      LODwAP_Arch_cubeFieldAndIDMapSequencePL; // how often to write out cube field and ID map
+      LODwAP_Arch_cubeFieldFileAndIDFileSequencePL; // how often to write out cube field and ID map
 
   static std::shared_ptr<ParameterLink<int>>
       LODwAP_Arch_pruneIntervalPL; // how often to attempt to prune the LOD
@@ -34,7 +35,7 @@ public:
       LODwAP_Arch_writeOrganismFilePL; // if true, write genome file
   
   static std::shared_ptr<ParameterLink<bool>>
-      LODwAP_Arch_writeCubeFieldAndIDMapFilePL; // if true, write cube field and ID map files
+      LODwAP_Arch_writeCubeFieldFileAndIDFilePL; // if true, write cube field and ID map files
 
 
   static std::shared_ptr<ParameterLink<std::string>> LODwAP_Arch_FilePrefixPL;
@@ -42,7 +43,7 @@ public:
   std::vector<int> dataSequence;     // how often to write out data
   std::vector<int> organismSequence; // how often to write out genomes
 
-  std::vector<int> cubeFieldAndIDMapSequence; //how often to write out cube field and ID maps
+  std::vector<int> cubeFieldFileAndIDFileSequence; //how often to write out cube field and ID maps
 
   int pruneInterval;            // how often to attempt to prune the LOD
   int terminateAfter;           // how long to run after updates (to get better
@@ -50,7 +51,7 @@ public:
   bool writeDataFile;           // if true, write data file
   bool writeOrganismFile;       // if true, write genome file
 
-  bool writeCubeFieldAndIDMapFiles;
+  bool writeCubeFieldFileAndIDFileBool;
 
   void constructLODFiles(const std::shared_ptr<Organism> &/*org*/);
 
@@ -61,7 +62,7 @@ public:
   void writeLODOrganismFile(std::vector<std::shared_ptr<Organism>> & /*LOD*/,
                        const std::shared_ptr<Organism> & /*effective_MRCA*/);
 
-  void writeTheCubeFieldAndIDMapFiles(std::vector<std::shared_ptr<Organism>> &population);
+  void writeCubeFieldFileAndIDFile(std::vector<std::shared_ptr<Organism>> &population);
 
   LODwAPArchivist() = delete;
   LODwAPArchivist(std::vector<std::string> popFileColumns = {},
@@ -79,7 +80,7 @@ public:
   std::string organism_file_name_;      // name of the Genome file (genomes on LOD)
   
   std::string cubeField_file_name_;     // suffix of Cube Field file (organism end-of-life connectomes)
-  std::string idMap_file_name;          // suffix of ID map file (for accessing cube field by organism ID)
+  std::string idFile_file_name_;          // suffix of ID map file (for accessing cube field by organism ID)
 
   int last_prune_ = -1; // last time Genome was Pruned
   int time_to_coalescence = -1;
@@ -88,12 +89,12 @@ public:
   int next_data_write_;     // next time data files will be written to disk
   int next_organism_write_; // next time a genome file will be written to
                             // genome.csv
-  int next_cubeFieldAndIDMap_write_;// next time a Cube Field and its ID map will be written to disc
+  int next_cubeFieldFileAndIDFile_write_;// next time a Cube Field and its ID map will be written to disc
 
   int data_seq_index = 0;
   int organism_seq_index = 0;
 
-  int cubeField_andIDMap_seq_index = 0;
+  int cubeFieldFile_andIDFile_seq_index = 0;
 
   int numCubes = 0;
 
