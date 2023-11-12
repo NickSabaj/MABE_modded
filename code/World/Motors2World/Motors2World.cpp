@@ -386,7 +386,7 @@ auto Motors2World::evaluate_single_thread(int analyze, int visualize, int debug)
     int connLength = brain->synaptic_weights.n_rows; //Potential error source; unsure if "->" or "." is appropriate. Testing by running, for the sake of quick development.
     int sliceCount = evaluationsPerGenerationPL->get(PT);
     org->organismLevelConnectomeCube.zeros(connLength, connLength, sliceCount); //Potential error source; unsure if "->" or "." is appropriate. Testing by running, for the sake of quick development.
-    //instantiate org fitness data in ordered state here
+    org->organismLevelFitnessResults.zeros(sliceCount);
     auto& world = experiences[org_to_evaluate]; // convenience and readability
     for (int r = 0; r < evaluationsPerGenerationPL->get(PT); r++) {
       world.reset({.generation=Global::update}); // reset the world
@@ -445,7 +445,7 @@ auto Motors2World::evaluate_single_thread(int analyze, int visualize, int debug)
       org->dataMap.append("accel_avg", mean(world.moving_avg));
       org->dataMap.append("moves", world.moves);
       org->organismLevelConnectomeCube.slice(r) = brain.synaptic_weights;
-      //update org fitness data in ordered state here
+      org->organismLevelFitnessResults(r) = fitness;
     }
   }
 }

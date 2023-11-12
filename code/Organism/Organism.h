@@ -63,6 +63,7 @@ public:
       false; // if false, genome will be deleted when organism dies.
 
   arma::cube organismLevelConnectomeCube;
+  arma::vec organismLevelFitnessResults;
 
   void initOrganism(std::shared_ptr<ParametersTable> PT_);
 

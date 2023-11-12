@@ -95,13 +95,30 @@ LODwAPArchivist::LODwAPArchivist(std::vector<std::string> popFileColumns,
                            : group_prefix_.substr(0, group_prefix_.size() - 2) +
                                  "__" + "cubeField.bin");
 
-  idFile_file_name_ =  (LODwAP_Arch_FilePrefixPL->get(PT) == "NONE"
+  idVec_file_name_ =  (LODwAP_Arch_FilePrefixPL->get(PT) == "NONE"
                           ? ""
                           : LODwAP_Arch_FilePrefixPL->get(PT)) +
                      (group_prefix_.empty()
                            ? "idFile.txt"
                            : group_prefix_.substr(0, group_prefix_.size() - 2) +
-                                 "__" + "idFile.txt");
+                                 "__" + "idFile.bin");
+
+  fitMat_file_name_ =  (LODwAP_Arch_FilePrefixPL->get(PT) == "NONE"
+                          ? ""
+                          : LODwAP_Arch_FilePrefixPL->get(PT)) +
+                     (group_prefix_.empty()
+                           ? "fitMat.bin"
+                           : group_prefix_.substr(0, group_prefix_.size() - 2) +
+                                 "__" + "fitMat.bin");
+
+  fitMeanVec_file_name_ =  (LODwAP_Arch_FilePrefixPL->get(PT) == "NONE"
+                          ? ""
+                          : LODwAP_Arch_FilePrefixPL->get(PT)) +
+                     (group_prefix_.empty()
+                           ? "fitMat.bin"
+                           : group_prefix_.substr(0, group_prefix_.size() - 2) +
+                                 "__" + "fitMat.bin");
+
 // The cube field files and id files should have update number prefixed to their file names each time they're first written.
 // This structure avoids having to try saving fields of fields, or using HDF5 files. HDF5 requires added preparation to the
 // armadillo environment, and I'm trying to avoid potential failure points requiring additional testing and troubleshooting.
@@ -228,23 +245,33 @@ void LODwAPArchivist::writeCubeFieldFileAndIDFile(std::vector<std::shared_ptr<Or
         //Just outlining in pseudocode for now
   int cubeFieldCubeCount = static_cast<int>(population.size());
   arma::field<arma::cube> cubeField(cubeFieldCubeCount);
+  arma::vec idVec = arma::ones<arma::vec>(cubeFieldCubeCount);
+  int evalsPerGen = static_cast<int>(population[0].organismLevelFitnessResults.n_elem);
+  arma::mat fitMat;
+  fitMat.zeros(cubeFieldCubeCount,evalsPerGen);//n_rows, n_cols
+  arma::vec fitMeanVec = arma::ones<arma::vec>(cubeFieldCubeCount);
 
   std::string updateNumString = std::to_string(Global::update);
 
   std::string cubeField_fullFileName = "updateNum_"+updateNumString+"_"+cubeField_file_name_;
-  std::string idFile_fullFileName = "updateNum_"+updateNumString+idFile_file_name_;
-  std::ofstream idFStream(idFile_fullFileName);
+  std::string idVec_fullFileName = "updateNum_"+updateNumString+idVec_file_name_;
+  std::string fitMat_fullFileName = "updateNum_"+updateNumString+fitMat_file_name_;
+  std::string fitMeanVec_fullFileName = "updateNum_"+updateNumString+fitMeanVec_file_name_;
   int orgID = 0;
   int fieldSlot = 0;
 
   for (auto const &org : population){ //Potential error source; unsure if "&" is appropriate. Testing by running, for the sake of quick development.
     orgID = org->ID;    // Get org ID
     cubeField(fieldSlot) = org->organismLevelConnectomeCube;    // Save org's cube to the cube field
-    idFStream << orgID << "\n"; // Save org's ID to the ID file, at line corresponding to its spot in the cube field
+    fitMat.row(fieldSlot) = org->organismLevelFitnessResults;// Save org's fitness vector to the fitness matrix
+    idVec(fieldSlot) = orgID;// Save org's ID to the ID file, at line corresponding to its spot in the cube field
+    fitMeanVec(fieldSlot) = mean(org->organismLevelFitnessResults);// Save org's fitness mean to the fitness mean file, at line corresponding to its spot in the cube field
     fieldSlot++; //iterate fieldSlot value
   }
-  idFStream.close();
   cubeField.save(cubeField_fullFileName);  //save cubeField
+  idVec.save(idVec_fullFileName);
+  fitMat.save(fitMat_fullFileName); //save fitness matrix
+  fitMeanVec.save(fitMeanVec_fullFileName);
 }
 
 bool LODwAPArchivist::archive(std::vector<std::shared_ptr<Organism>> &population,

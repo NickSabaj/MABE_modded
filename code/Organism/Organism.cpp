@@ -37,6 +37,7 @@ void Organism::initOrganism(std::shared_ptr<ParametersTable> PT_) {
   dataMap.set("alive", alive);
   dataMap.set("timeOfBirth", timeOfBirth);
   organismLevelConnectomeCube.zeros(1,1,1);
+  organismLevelFitnessResults.zeros(1,1);
 }
 
 /*

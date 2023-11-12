@@ -80,7 +80,9 @@ public:
   std::string organism_file_name_;      // name of the Genome file (genomes on LOD)
   
   std::string cubeField_file_name_;     // suffix of Cube Field file (organism end-of-life connectomes)
-  std::string idFile_file_name_;          // suffix of ID map file (for accessing cube field by organism ID)
+  std::string idVec_file_name_;          // suffix of ID map file (for accessing cube field by organism ID)
+  std::string fitMat_file_name_;
+  std::string fitMeanVec_file_name_;
 
   int last_prune_ = -1; // last time Genome was Pruned
   int time_to_coalescence = -1;
