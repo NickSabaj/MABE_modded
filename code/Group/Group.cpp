@@ -23,7 +23,11 @@ Group::Group(std::vector<std::shared_ptr<Organism>> _population,
 
 Group::~Group() {}
 
-bool Group::archive(int flush) { return archivist->archive(population, flush); }
+bool Group::archive(int flush) {
+  int population_size_debug_group = population.size();
+    std::cout << "\n  population size debug group: " << population_size_debug_group <<"\n";
+  return archivist->archive(population, flush); 
+}
 
 void Group::optimize() { optimizer->optimize(population); }
 
