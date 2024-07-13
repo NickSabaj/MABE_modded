@@ -60,11 +60,19 @@ ptrnGlobalUpdates = re.compile(r'GLOBAL-updates\s+[0-9]+') # ex: None or 'GLOBAL
 def makeQsubFile(realDisplayName, conditionDirectoryName, rep, slurmFileName, executable, cfg_files, workDir, conditions, padSizeReps):
     outFile = open(slurmFileName, 'w')
     outFile.write('#!/bin/bash -login\n')
+
+
+
+
     for p in HPCC_parameters:
         outFile.write(p + '\n')
     #outFile.write('#PBS -o ' + realDisplayName + '.out\n')
     outFile.write('#SBATCH --output=' + realDisplayName + '.out\n')
     outFile.write('#SBATCH --job-name=' + realDisplayName + '\n')
+
+    outFile.write('module load GCCcore/9.3.0\n')
+    outFile.write('module load DMTCP/2.6.0\n')
+    outFile.write('module restore testin9a\n')
 
     outFile.write('\n' +
                   'shopt -s expand_aliases\n' +
@@ -89,6 +97,9 @@ def makeQsubFile(realDisplayName, conditionDirectoryName, rep, slurmFileName, ex
         mabe_call = executable + ' ' + includeFileString + '-p GLOBAL-outputPrefix ' + local_dir + '/ GLOBAL-randomSeed ' + str(rep) + ' ' + conditions
         longjob_contents = '''
 ulimit -s 8192
+
+
+
 cd ${{SLURM_SUBMIT_DIR}}
 export SLURM_JOBSCRIPT="{FILE_NAME}" # used for resubmission
 ######################## start dmtcp_coordinator #######################
@@ -110,12 +121,18 @@ then
   dmtcp_launch -h $DMTCP_COORD_HOST -p $DMTCP_COORD_PORT --rm --ckpt-open-files {MABE_CALL} &
   #wait for an inverval of checkpoint seconds to start checkpointing
   sleep $CKPT_WAIT_SEC
+  # if program is still running, do the checkpoint and resubmit
+  if /mnt/ufs18/home-166/f0000194/dmtcp/bin/dmtcp_command -h $DMTCP_COORD_HOST -p $DMTCP_COORD_PORT -s 1>/dev/null 2>&1
+  then
   # start checkpointing
   dmtcp_command -h $DMTCP_COORD_HOST -p $DMTCP_COORD_PORT --ckpt-open-files --bcheckpoint
   # kill the running job after checkpointing
   dmtcp_command -h $DMTCP_COORD_HOST -p $DMTCP_COORD_PORT --quit
   # resubmit the job
   sbatch $SLURM_JOBSCRIPT
+  else
+    echo "job finished"
+  fi
 else            # it is a restart run
   # clean up artifacts (resulting files that could be in the middle of being written to)
   # clean up any generated mabe files that have been checkpointed
