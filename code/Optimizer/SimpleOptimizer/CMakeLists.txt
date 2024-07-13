@@ -1,0 +1,6 @@
+option(enable_Optimizer_Simple "Enable Module SimpleOptimizer" On)
+if (enable_Optimizer_Simple)
+  register_module(Optimizer Simple)
+  target_sources(${EXE} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/SimpleOptimizer.cpp)
+  target_sources(${EXE} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/SimpleOptimizer.h)
+endif()
