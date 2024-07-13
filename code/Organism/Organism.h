@@ -19,7 +19,7 @@
 
 #include <Utilities/Data.h>
 #include <Utilities/Parameters.h>
-
+#define ARMA_USE_HDF5
 #include <armadillo>
 
 class Organism {
@@ -62,8 +62,13 @@ public:
   bool trackOrganism =
       false; // if false, genome will be deleted when organism dies.
 
-  arma::cube organismLevelConnectomeCube;
+  arma::fcube organismLevelConnectomeCube;
   arma::vec organismLevelFitnessResults;
+
+  arma::uword orgSliceCountDebug;
+  arma::uword orgFitSizeDebugFirst;
+  arma::uword orgFitSizeDebugSecond;
+
 
   void initOrganism(std::shared_ptr<ParametersTable> PT_);
 

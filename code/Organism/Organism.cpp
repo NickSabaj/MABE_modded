@@ -38,6 +38,10 @@ void Organism::initOrganism(std::shared_ptr<ParametersTable> PT_) {
   dataMap.set("timeOfBirth", timeOfBirth);
   organismLevelConnectomeCube.zeros(1,1,1);
   organismLevelFitnessResults.zeros(1,1);
+  orgSliceCountDebug = 5; 
+  orgFitSizeDebugFirst = 7;
+  orgFitSizeDebugSecond = 9;
+  //^--Debug values are set to weird positive ints because they use uwords; unsigned.
 }
 
 /*
