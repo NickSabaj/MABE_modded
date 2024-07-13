@@ -18,7 +18,7 @@
 ////////////////
 std::shared_ptr<ParameterLink<bool>>
 Motors2Brain::initializeRandomPL = Parameters::register_parameter("BRAIN_MOTORS2-initializeRandom", false, "Initialize genome randomly, instead of known good initial values");
-
+//
 // Constructor
 Motors2Brain::Motors2Brain(int _nrInNodes, int _nrOutNodes, std::shared_ptr<ParametersTable> PT_) : AbstractBrain(_nrInNodes, _nrOutNodes, PT_) {
   development_phase_finished = false; // true if stage2 was run in 1st network update previously
