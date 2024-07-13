@@ -14,7 +14,7 @@
 // safety first :)
 #define ARMA_NO_DEBUG 1 // armadillo-specific version (use () indexing in armadillo and then use this to get performance when ready)
 #endif
-
+#define ARMA_USE_HDF5
 #include <armadillo> // activate the algebra lib now that we have defied potential debugging compiler defs
 
 using namespace arma;

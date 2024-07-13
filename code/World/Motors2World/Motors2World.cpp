@@ -13,11 +13,11 @@
  * We reuse an experience data structure and simply reset it
  * when evaluating a new organism.
  */
-
+//
 ////////////////
 // PARAMETERS //
 ////////////////
-std::shared_ptr<ParameterLink<int>> Motors2World::evaluationsPerGenerationPL = Parameters::register_parameter("WORLD_MOTORS2-evaluationsPerGeneration", 1, "Number of times to test each Genome per generation (useful with non-deterministic brains)");
+std::shared_ptr<ParameterLink<int>> Motors2World::evaluationsPerGenerationPL = Parameters::register_parameter("WORLD_MOTORS2-evaluationsPerGeneration", 5, "Number of times to test each Genome per generation (useful with non-deterministic brains)");
 
 std::shared_ptr<ParameterLink<int>> Motors2World::numThreadsPL = Parameters::register_parameter("WORLD_MOTORS2-numThreads", 0, "Number of threads to use (each member of the population is evaluated on a single thread) 0 implies max physical cores available assuming hyperthreading or equivalent enabled (logical cores / 2).");
 
@@ -382,15 +382,23 @@ auto Motors2World::evaluate_single_thread(int analyze, int visualize, int debug)
     // get reference to the organism to evaluate
     std::vector<std::shared_ptr<Organism>>& population = *population_ptr;
     std::shared_ptr<Organism> org = population[org_to_evaluate];
-    auto brain = org->brains[brainNamePL->get(PT)];
-    int connLength = brain->synaptic_weights.n_rows; //Potential error source; unsure if "->" or "." is appropriate. Testing by running, for the sake of quick development.
+
+    auto brain = std::dynamic_pointer_cast<Motors2Brain>(org->brains[brainNamePL->get(PT)]);
+
+
+    int connLength = brain->num_total_neurons; 
     int sliceCount = evaluationsPerGenerationPL->get(PT);
     org->organismLevelConnectomeCube.zeros(connLength, connLength, sliceCount); //Potential error source; unsure if "->" or "." is appropriate. Testing by running, for the sake of quick development.
-    org->organismLevelFitnessResults.zeros(sliceCount);
+    org->organismLevelFitnessResults.zeros(sliceCount,1);
+    //org->orgSliceCountDebug = sliceCount; 
+    org->orgFitSizeDebugFirst = org->organismLevelFitnessResults.n_elem;
+
     auto& world = experiences[org_to_evaluate]; // convenience and readability
     for (int r = 0; r < evaluationsPerGenerationPL->get(PT); r++) {
       world.reset({.generation=Global::update}); // reset the world
+
       brain->resetBrain();
+
       // lifetime ("stage 3")
       // WARNING: start on timestep 1, not 0, because the
       // plasticity functions require a history
@@ -444,8 +452,9 @@ auto Motors2World::evaluate_single_thread(int analyze, int visualize, int debug)
       org->dataMap.append("right_turns_60", world.right_turns_60);
       org->dataMap.append("accel_avg", mean(world.moving_avg));
       org->dataMap.append("moves", world.moves);
-      org->organismLevelConnectomeCube.slice(r) = brain.synaptic_weights;
+      org->organismLevelConnectomeCube.slice(r) = brain->synaptic_weights;
       org->organismLevelFitnessResults(r) = fitness;
+      org->orgFitSizeDebugSecond = org->organismLevelFitnessResults.n_elem;
     }
   }
 }
