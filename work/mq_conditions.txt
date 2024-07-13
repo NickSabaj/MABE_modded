@@ -1,0 +1,76 @@
+
+# Lines starting with # are ignored
+# Lists must not contain white space (i.e. "1,2,3" OK, "1, 2, 3" Not OK)
+
+# REPS = [FIRST REP] [LAST REP]
+# if experiments are up to 3-digits, then start at 101. If up to 4-digits start at 1001, etc.
+# This convention solves sorting and zero-padding problems later.
+REPS = 101 110
+
+# Settings to override the config files, but will not be varied
+# Multiple CONSTANT definitions will be added together.
+#CONSTANT = GLOBAL-updates 10  WORLD-worldType Berry
+CONSTANT = WORLD_MOTORS2-numThreads 0 # 0 implies max physical cores available assuming hyperthreading or equivalent enabled (logical cores / 2)
+
+# VAR = [SHORT NAME]	[REAL NAME]	[conditon1,condition2,etc.]
+# Short name is used in this file, and also determines output directory names
+#VAR = EAM	WORLD_BERRY-allowEatAndMove
+#VAR = AE	WORLD_BERRY-alwaysEat
+VAR = FITN	WORLD_MOTORS2-fitnessFunction
+VAR = DUM	WORLD_MOTORS2-mq_conditionsDummyVariableBySabaj	
+
+
+# Alternatively to VAR/EXCEPT, conditions can achieve a similar effect and still respect EXCEPT declarations
+#CONDITIONS = TSK=1.0,3.0  RF1="some message here"  RF2=2,[1,2,3,4]
+#CONDITIONS = EAM=1,0  AE=0
+
+#CONDITIONS = FITN=0,1  DUM=0
+CONDITIONS = FITN=2,3  DUM=0
+
+#FITN is fitness function type; type 1 was found to be far worse than type 0.
+#    ^That testing was done in trying to get back to prior performance, up to that seen in our paper.
+#    Next avenue to explore will be mutation rate. Then, if necessary, mutation details.
+#    If further changes are needed, code regarding the prevalence and movement of prey might be 
+#    examined. But, since top performance is comparable between paper and current results, I think
+#    the issue is about the animats' learning, rather than the prey's side of things.
+#DUM is dummy variable; used to clarify what syntax multiple-condition runs require. 
+#CONDITIONS = FITN=0  DUM=0
+# Testing whether 2 conditions are needed for success in the indefinite mode. Got a Slurm timeout error last test.
+
+# EXCEPT = [SHORT NAME]=[condition],[SHORT NAME]=[condition],etc.
+# If all name/condition pairs are met for any EXCEPT, then that combination will not be run.
+#EXCEPT = EAM=0 AE=0
+
+# list of setting files (.cfg) which you want MABE to load with the -f option. files will be loaded in the order provided.
+SETTINGS = settings.cfg,settings_organism.cfg,settings_world.cfg
+
+# list of files used by MABE (i.e. maps, images, etc.) and you can use rep replacement {{rep}} syntax
+# these files will be copied to the working directory if necessary
+#OTHERFILES = my_file.txt
+
+# a population_loader.plf file can be created using the contents here
+# be sure to set the -p GLOBAL-initPop population_loader.plf in CONSTANT definitions above
+#PLF = MASTER = 'LOD_organisms.csv'
+# or the following 2 lines with rep replacement works:
+#PLF = some_var = best 5 by ID from { 'LOD_organisms_{{rep}}.csv' }
+#PLF = MASTER = collapse some_var
+-----
+
+# JOBNAME will be appended before condition (C*) identifier - if "NONE" then job will have not JOBNAME
+JOBNAME = NONE
+
+# EXECUTABLE is the name of program to run, may include a path
+EXECUTABLE = ./mabe
+#EXECUTABLE = mabe.exe
+
+-----
+# comma separate the mail type list ex: FAIL,END,REQUEUE
+
+# HPCC (not used for indefinite mode)
+HPCC_PARAMETERS = #SBATCH --constraint="[intel16|intel18]"
+HPCC_PARAMETERS = #SBATCH --ntasks=1
+HPCC_PARAMETERS = #SBATCH --cpus-per-task=16
+HPCC_PARAMETERS = #SBATCH --time=5-12  #WARNING indefinite requires 03:51:00 or greater
+HPCC_PARAMETERS = #SBATCH --mem=4G
+HPCC_PARAMETERS = #SBATCH --mail-type=FAIL
+
