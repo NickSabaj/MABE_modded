@@ -153,7 +153,8 @@ int main(int argc, const char *argv[]) {
 
   Global::update = 0;
 
-
+  int population_size_debug_other = 0;
+  int population_size_debug_foo = 0;
   if (Global::modePL->get() == "run") {
     ////////////////////////////////////////////////////////////////////////////////////
     // run mode - evolution loop
@@ -164,6 +165,7 @@ int main(int argc, const char *argv[]) {
 
     // in run mode we evolve organsims
     auto done = false;
+
     while ((!done) && (!userExitFlag)) { //! groups[defaultGroup]->archivist->finished) {
       world->evaluate(groups, false, false,
                       AbstractWorld::debugPL->get()); // evaluate each organism
@@ -173,7 +175,16 @@ int main(int argc, const char *argv[]) {
       done = true; // until we find out otherwise, assume we are done.
       for (auto const &group : groups) {
         if (!group.second->archivist->finished_) {
+          population_size_debug_other = group.second->population.size();
+
+    	std::cout << "\n  population size debug other: " << population_size_debug_other
+              << "\n";
+
           group.second->optimize(); // create the next updates population
+          population_size_debug_foo = group.second->population.size();
+    	std::cout << "\n  population size debug foo: " << population_size_debug_foo
+              << "\n";
+
           group.second->archive(); // save data, update memory and delete unneeded data;
           if (!group.second->archivist->finished_) {
             done = false; // if any groups archivist says we are not done, then
@@ -361,6 +372,13 @@ constructAllGroupsFrom(const std::shared_ptr<AbstractWorld> &world,
     std::vector<std::shared_ptr<Organism>> population;
 
     auto file_to_load = Global::initPopPL->get(PT);
+    // start of initPop fix :: adding support so that a number can be given for initPop
+    if (std::isdigit(file_to_load[0])) {
+        //std::cout << "  updataing initPop parameter to \"defaut " << file_to_load << "\"" << std::endl;
+        file_to_load = "default " + file_to_load;
+    }
+    // end of initPop fix
+
     Loader loader;
     auto orgs_to_load = loader.loadPopulation(file_to_load);
     int population_size = orgs_to_load.size();
@@ -483,11 +501,12 @@ constructAllGroupsFrom(const std::shared_ptr<AbstractWorld> &world,
     // the progenitor has served it's purpose. Killing an organsim is important
     // as it allows for cleanup.
     progenitor->kill();
-
+    int population_size_debug = population.size();
     // report on what was just built
     std::cout << "\nFinished Building Group: " << groupInfo.first
               << "   Group name space: " << NS
               << "\n  population size: " << population_size
+              << "\n  population size debug: " << population_size_debug
               << "     Optimizer: " << PT->lookupString("OPTIMIZER-optimizer")
               << "     Archivist: "
               << PT->lookupString("ARCHIVIST-outputMethod") << "\n"
